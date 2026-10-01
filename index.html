@@ -1,0 +1,1538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartFleet | Real-Time Multi-Depot Fleet Optimization Engine</title>
+  <meta name="description" content="Industrial-grade Real-Time Multi-Depot Fleet Optimization Engine featuring sub-150ms re-optimization, VRPTW Google OR-Tools solver, constraint gates, adversarial anti-spoofing defense, and cost-aware inter-depot rebalancing.">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <!-- Leaflet Map CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Top Navigation Header -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="brand-logo">
+        <div class="radar-pulse"></div>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="12 2 19 21 12 17 5 21 12 2"></polygon>
+        </svg>
+      </div>
+      <div>
+        <h1 class="brand-title">SmartFleet <span class="gradient-text">GLOBAL REAL-TIME DELIVERY NETWORK</span></h1>
+        <p class="brand-subtitle">From a local street delivery to an inter-state shipment, SmartFleet continuously optimizes the vehicle assignment and route.</p>
+      </div>
+    </div>
+
+        <!-- Global Site Navigation Tabs -->
+    <nav class="site-nav" id="main-site-nav">
+      <button class="nav-tab active" data-tab="tab-operations">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
+        <span>Mission Control</span>
+      </button>
+      <button class="nav-tab" data-tab="tab-orders">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+        <span>Orders & Dispatch</span>
+      </button>
+      <button class="nav-tab" data-tab="tab-analytics">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+        <span>Analytics</span>
+      </button>
+      <button class="nav-tab" data-tab="tab-depots">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="9" y1="22" x2="9" y2="2"></line><line x1="15" y1="22" x2="15" y2="2"></line></svg>
+        <span>Depot Network</span>
+      </button>
+      <button class="nav-tab" data-tab="tab-security">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+        <span>Cybersecurity</span>
+      </button>
+      <button class="nav-tab" data-tab="tab-docs">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+        <span>Architecture & Docs</span>
+      </button>
+    </nav>
+
+    <!-- Live Telemetry Status Badges -->
+    <div class="header-stats">
+      <div class="stat-badge">
+        <span class="badge-dot pulse-green"></span>
+        <span class="badge-label">Telemetry Feed:</span>
+        <span class="badge-val text-emerald" id="gps-stream-status">ACTIVE (5Hz)</span>
+      </div>
+      <div class="stat-badge">
+        <span class="badge-dot pulse-green" id="traffic-indicator-dot"></span>
+        <span class="badge-label">Corridor Traffic:</span>
+        <span class="badge-val" id="traffic-level-label">FREE FLOW (CLEAR)</span>
+      </div>
+      <div class="stat-badge security-badge" id="security-badge">
+        <span class="badge-dot pulse-blue" id="sec-dot"></span>
+        <span class="badge-label">Anti-Spoofing:</span>
+        <span class="badge-val" id="sec-status">GUARD ARMED</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Tab Page 1: Operations (Mission Control) -->
+  <div id="tab-operations" class="tab-page active">
+  <!-- Horizontal Event Re-optimization Pipeline Sequence Bar -->
+  <div class="pipeline-banner">
+    <div class="pipeline-title-group">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polyline>
+      </svg>
+      <span>EVENT PIPELINE:</span>
+    </div>
+
+    <div class="pipeline-steps">
+      <div class="pipe-step" id="pipe-step-1">
+        <span class="pipe-num">1</span>
+        <span>New Event Ingestion</span>
+      </div>
+      <span class="pipe-arrow">➔</span>
+      <div class="pipe-step" id="pipe-step-2">
+        <span class="pipe-num">2</span>
+        <span>Filter Candidate Vehicles</span>
+      </div>
+      <span class="pipe-arrow">➔</span>
+      <div class="pipe-step" id="pipe-step-3">
+        <span class="pipe-num">3</span>
+        <span>Validate Capacity/Hours Gate</span>
+      </div>
+      <span class="pipe-arrow">➔</span>
+      <div class="pipe-step" id="pipe-step-4">
+        <span class="pipe-num">4</span>
+        <span>Calculate Route Cost Engine</span>
+      </div>
+      <span class="pipe-arrow">➔</span>
+      <div class="pipe-step" id="pipe-step-5">
+        <span class="pipe-num">5</span>
+        <span>Publish Assignment</span>
+      </div>
+    </div>
+
+    <div class="pipeline-sla-badge">
+      TARGET: &lt;150ms SLA
+    </div>
+  </div>
+
+  <!-- Main Grid Layout -->
+  <main class="main-container">
+    <!-- Left Sidebar: Operations, Controllers & KPI Metrics -->
+    <aside class="sidebar-panel">
+      <!-- Section 1: KPI Metrics Banner -->
+      <section class="panel-section">
+        <div class="section-title-wrap">
+          <h2 class="section-title">Fleet Performance KPIs</h2>
+          <span class="badge-mini badge-live">LIVE SOLVER</span>
+        </div>
+        <div class="kpi-grid">
+          <div class="kpi-card" id="kpi-distance-reduced">
+            <div class="kpi-icon icon-emerald">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline>
+                <polyline points="17 18 23 18 23 12"></polyline>
+              </svg>
+            </div>
+            <div class="kpi-body">
+              <span class="kpi-label">Distance Reduced</span>
+              <span class="kpi-value text-emerald" id="kpi-val-distance-reduced">-24.2%</span>
+            </div>
+          </div>
+
+          <div class="kpi-card" id="kpi-fleet-utilization">
+            <div class="kpi-icon icon-cyan">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 20V10M12 20V4M6 20v-6"></path>
+              </svg>
+            </div>
+            <div class="kpi-body">
+              <span class="kpi-label">Fleet Utilization</span>
+              <span class="kpi-value" id="kpi-val-utilization">+35.0%</span>
+            </div>
+          </div>
+
+          <div class="kpi-card" id="kpi-time-violations">
+            <div class="kpi-icon icon-emerald">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 14 14"></polyline>
+              </svg>
+            </div>
+            <div class="kpi-body">
+              <span class="kpi-label">Window Violations</span>
+              <span class="kpi-value text-emerald" id="kpi-val-violations">0</span>
+            </div>
+          </div>
+
+          <div class="kpi-card" id="kpi-latency">
+            <div class="kpi-icon icon-cyan">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+              </svg>
+            </div>
+            <div class="kpi-body">
+              <span class="kpi-label">Pipeline Latency</span>
+              <span class="kpi-value text-cyan" id="kpi-val-latency">124 ms</span>
+            </div>
+          </div>
+
+          <div class="kpi-card" id="kpi-active-vehicles">
+            <div class="kpi-icon icon-emerald">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="1" y="3" width="15" height="13"></rect>
+                <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                <circle cx="18.5" cy="18.5" r="2.5"></circle>
+              </svg>
+            </div>
+            <div class="kpi-body">
+              <span class="kpi-label">Active Fleet</span>
+              <span class="kpi-value text-emerald" id="kpi-val-vehicles">3 / 4 Active</span>
+            </div>
+          </div>
+
+          <div class="kpi-card" id="kpi-operational-cost">
+            <div class="kpi-icon icon-cyan">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="1" x2="12" y2="23"></line>
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+              </svg>
+            </div>
+            <div class="kpi-body">
+              <span class="kpi-label">Total Cost</span>
+              <span class="kpi-value text-cyan" id="kpi-val-cost">$283.73</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 2: Interactive Dashboard & Demo Mode Controllers -->
+      <section class="panel-section">
+        <div class="section-title-wrap">
+          <h2 class="section-title">Interactive Demo Controllers</h2>
+          <span class="badge-mini badge-sec">DISPATCH ENGINE</span>
+        </div>
+        <p class="section-desc">Trigger real-time fleet events, adversarial stress cases, and dynamic solver re-routing:</p>
+
+        <div class="action-deck-grid">
+          <!-- 1. Initialize Depots & Fleet -->
+          <button class="btn-ctrl" id="btn-init" title="Reset 3 Depots, active fleet and baseline orders">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 4v6h6"></path>
+              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+            </svg>
+            <span>Initialize Depots & Fleet</span>
+          </button>
+
+          <!-- 2. Inject Order Influx -->
+          <button class="btn-ctrl btn-highlight" id="btn-inject-surge" title="Trigger sudden surge of incoming customer orders">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="16"></line>
+              <line x1="8" y1="12" x2="16" y2="12"></line>
+            </svg>
+            <span>Inject Order Influx</span>
+          </button>
+
+          <!-- 3. Run Optimization Engine -->
+          <button class="btn-ctrl btn-highlight" id="btn-optimize" title="Execute Google OR-Tools VRPTW solver with constraints">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+            <span>Run OR-Tools Solver</span>
+          </button>
+
+          <!-- 4. Trigger Breakdown Event -->
+          <button class="btn-ctrl btn-danger-action" id="btn-breakdown" title="Eject broken vehicle and redistribute pending orders">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span>Trigger Breakdown Event</span>
+          </button>
+
+          <!-- 5. Simulate GPS Spoof -->
+          <button class="btn-ctrl btn-danger-action" id="btn-gps-spoof" title="Trigger illegal velocity jump, lock feed, and alert">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+            <span>Simulate GPS Spoof</span>
+          </button>
+
+          <!-- 6. Network Blackout Mode -->
+          <button class="btn-ctrl btn-warning-action" id="btn-toggle-blackout" title="Drop network signal, freeze coordinates, block reassignments">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="1" y1="1" x2="23" y2="23"></line>
+              <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path>
+              <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path>
+              <path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path>
+              <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path>
+              <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+              <line x1="12" y1="20" x2="12.01" y2="20"></line>
+            </svg>
+            <span>Network Blackout Toggle</span>
+          </button>
+
+          <!-- 7. Mass Cancellation Pruning -->
+          <button class="btn-ctrl" id="btn-mass-cancel" title="Instantly prune cancelled stops from active routes">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="15" y1="9" x2="9" y2="15"></line>
+              <line x1="9" y1="9" x2="15" y2="15"></line>
+            </svg>
+            <span>Prune Mass Cancellations</span>
+          </button>
+
+          <!-- 8. Cost-Aware Inter-Depot Rebalancing -->
+          <button class="btn-ctrl" id="btn-rebalance" title="Evaluate transfer cost vs delay penalty for idle vehicle shifting">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="17 1 21 5 17 9"></polyline>
+              <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+              <polyline points="7 23 3 19 7 15"></polyline>
+              <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+            </svg>
+            <span>Cost-Aware Rebalance</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Section 3: Multi-Depot Coordination & Network -->
+      <section class="panel-section">
+        <div class="section-title-wrap">
+          <h2 class="section-title">Multi-Depot Coordination</h2>
+          <span class="badge-mini">3 DEPOTS</span>
+        </div>
+        <p class="section-desc">Unified tri-depot network with cross-depot vehicle transfer evaluation:</p>
+
+        <div class="multi-depot-grid">
+          <div class="depot-card">
+            <strong>Depot A</strong>
+            <span>Urban Center (SF)</span>
+            <small>High Density Zone</small>
+          </div>
+          <div class="depot-card">
+            <strong>Depot B</strong>
+            <span>Industrial Hub (SJ)</span>
+            <small>Silicon Valley Corridor</small>
+          </div>
+          <div class="depot-card">
+            <strong>Depot C</strong>
+            <span>Port District (OAK)</span>
+            <small>Maritime Terminal</small>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 4: Mathematical Objective & Hard Constraints Gate -->
+      <section class="panel-section">
+        <div class="section-title-wrap">
+          <h2 class="section-title">Mathematical Objective & Hard Constraints</h2>
+        </div>
+
+        <div class="math-formula-box">
+          <strong>Objective:</strong> Minimize Total Cost = Cost(Dist) + Cost(Fuel) + Cost(Delay) + Cost(Rebalance)
+          <div id="cost-breakdown-display" style="margin-top: 4px; color: #94a3b8; font-size: 10px;"></div>
+        </div>
+
+        <div class="constraint-gate-list" style="margin-top: 8px;">
+          <div class="gate-item">
+            <span>1. Capacity Bounds (Payload &le; MaxCapacity)</span>
+            <span class="gate-badge">PASSED</span>
+          </div>
+          <div class="gate-item">
+            <span>2. Time Windows (Arrival &isin; [Start, End])</span>
+            <span class="gate-badge">PASSED</span>
+          </div>
+          <div class="gate-item">
+            <span>3. Driver Shift Limits (Shift &le; 10h HOS)</span>
+            <span class="gate-badge">PASSED</span>
+          </div>
+          <div class="gate-item">
+            <span>4. Asset Readiness (Status == ACTIVE)</span>
+            <span class="gate-badge">PASSED</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 5: Real-Time GPS Simulation & Telemetry Playback -->
+      <section class="panel-section">
+        <div class="section-title-wrap">
+          <h2 class="section-title">GPS Telemetry & Playback</h2>
+          <span class="sim-clock" id="sim-clock">T+ 00:00</span>
+        </div>
+        <div class="controls-row">
+          <button class="btn btn-primary" id="btn-play-pause">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            <span id="btn-play-text">Start Simulation</span>
+          </button>
+          <button class="btn btn-secondary" id="btn-reset-sim">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 4v6h6"></path>
+              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+            </svg>
+            Reset
+          </button>
+        </div>
+
+        <div class="speed-slider-wrap" style="margin-top: 8px;">
+          <div class="speed-label-row">
+            <span>Simulation Warp Speed:</span>
+            <strong id="warp-factor-label">5x</strong>
+          </div>
+          <input type="range" id="sim-speed-slider" min="1" max="20" value="5" class="range-slider">
+        </div>
+
+        <div class="telemetry-test-grid" style="margin-top: 8px;">
+          <button class="btn btn-sm btn-outline-emerald" id="btn-ping-valid">
+            Send Valid GPS Ping
+          </button>
+          <button class="btn btn-sm btn-ghost" id="btn-traffic-rush">
+            <span class="dot-traffic amber"></span> Congestion Jam
+          </button>
+        </div>
+      </section>
+
+      <!-- Section 6: Active Fleet Roster -->
+      <section class="panel-section flex-grow">
+        <div class="section-title-wrap">
+          <h2 class="section-title">Fleet Vehicles & Status</h2>
+        </div>
+        <div class="vehicle-list" id="vehicle-roster">
+          <!-- Populated dynamically via app.js -->
+        </div>
+      </section>
+    </aside>
+
+    <!-- Center/Right: Interactive GPS & Traffic Map -->
+    <section class="map-wrapper">
+      <div id="fleet-map"></div>
+
+      <!-- 3D World Globe (Three.js WebGL Container & HUD Overlay) -->
+      <div id="globe-3d-wrapper" class="globe-3d-wrapper hidden">
+        <div id="globe-3d-container"></div>
+        <div class="globe-hud-overlay">
+          <div class="globe-hud-header">
+            <span class="badge-dot pulse-emerald"></span>
+            <span>GLOBAL 3D FLEET ORBIT</span>
+          </div>
+          <div class="globe-hud-stats">
+            <div><span>Coverage:</span> <strong>Multi-Depot Mesh</strong></div>
+            <div><span>Primary SF Depots:</span> <strong style="color:var(--color-primary-light);">Depots A, B, C</strong></div>
+            <div><span>Global Hubs:</span> <strong style="color:var(--color-secondary-light);">NYC, LHR, FRA, NRT</strong></div>
+            <div><span>GPS Constellation:</span> <span>3 Orbital Satellites</span></div>
+          </div>
+          <div class="globe-hud-controls">
+            <button class="globe-hud-btn active" id="btn-globe-autorotate" title="Toggle Auto-Spin">Auto-Rotate</button>
+            <button class="globe-hud-btn" id="btn-globe-focus-sf" title="Focus Primary Bay Area Depots">Focus SF</button>
+            <button class="globe-hud-btn" id="btn-globe-focus-world" title="View Full World Orbit">World View</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Network Blackout Mode Warning Overlay Banner -->
+      <div class="blackout-banner" id="blackout-banner">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="1" y1="1" x2="23" y2="23"></line>
+          <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path>
+          <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path>
+          <path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path>
+          <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path>
+          <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+        </svg>
+        <span>NETWORK BLACKOUT ACTIVE: Signals dropped. Assignments frozen at last-known coordinates. Unsafe reassignments blocked.</span>
+      </div>
+
+      <!-- Map Overlay Floating Legend -->
+      <div class="map-overlay-legend">
+        <div class="legend-header">
+          <strong>SmartFleet Logistics Legend</strong>
+        </div>
+        <div class="legend-items">
+          <div class="legend-row">
+            <span class="legend-line line-green"></span>
+            <span>Fleet Routes (Royal Blue & Calm Emerald)</span>
+          </div>
+          <div class="legend-row">
+            <span class="legend-symbol">🏢</span>
+            <span>Depots A, B, C (Royal Blue Nodes)</span>
+          </div>
+          <div class="legend-row">
+            <span class="legend-symbol">📦</span>
+            <span>Delivery Stops (Calm Emerald Mint)</span>
+          </div>
+          <div class="legend-row">
+            <span class="legend-symbol">🚚</span>
+            <span>Active Fleet (Royal Blue & Emerald)</span>
+          </div>
+          <div class="legend-row">
+            <span class="legend-line line-yellow"></span>
+            <span>Traffic Incident Zone (Royal Blue Corridor)</span>
+          </div>
+        </div>
+      </div>
+
+            <!-- Operational Disruption Alert Banner -->
+      <div class="disruption-banner" id="disruption-banner">
+        <span id="disruption-icon">⚠</span>
+        <div id="disruption-text">ROUTE DISRUPTION: Vehicle V-104 unavailable. Re-optimizing 3 affected orders...</div>
+      </div>
+
+      <!-- Top Global Map Control Bar (Single Sleek Strip, Never Wraps) -->
+      <div class="global-map-control-bar">
+        <!-- Scale Presets (Amazon / Flipkart Delivery Hierarchy) -->
+        <div class="control-bar-group">
+          <button class="map-btn-compact active" id="btn-view-world" title="Global Road Logistics Network">
+            <span>🌍 World</span>
+          </button>
+          <button class="map-btn-compact" id="btn-view-country" title="National Highway Grid">
+            <span>🇮🇳 National</span>
+          </button>
+          <button class="map-btn-compact" id="btn-view-state" title="Inter-State Highway (Telangana ➔ Maharashtra)">
+            <span>🛣️ Inter-State</span>
+          </button>
+          <button class="map-btn-compact" id="btn-view-city" title="City Delivery Hub (Hyderabad)">
+            <span>🏙️ City Hub</span>
+          </button>
+          <button class="map-btn-compact" id="btn-view-doorstep" title="Customer Doorstep Delivery">
+            <span>📍 Doorstep</span>
+          </button>
+        </div>
+
+        <!-- E-Commerce Last-Mile & Traffic Optimization Actions -->
+        <div class="control-bar-group">
+          <button class="map-btn-compact btn-scenario-highlight" id="btn-run-scenario-amazon" title="Run Amazon/Flipkart Last-Mile Delivery Scenario (Hub ➔ Doorstep)">
+            <span>⚡ Amazon/Flipkart Delivery</span>
+          </button>
+          <button class="map-btn-compact btn-traffic-highlight" id="btn-toggle-traffic-reroute" title="Simulate Corridor Traffic Jam & Dynamic AI Rerouting">
+            <span id="traffic-btn-txt">🚦 Dynamic Traffic Reroute</span>
+          </button>
+        </div>
+
+        <!-- Simulation Controls -->
+        <div class="control-bar-group">
+          <button class="map-btn-compact btn-play-sim" id="btn-start-global-sim" title="Start real-time movement">
+            <span id="sim-play-icon">▶</span> <span id="sim-play-txt">Live</span>
+          </button>
+          <button class="map-btn-compact" id="btn-reset-global-sim" title="Reset all assets">
+            <span>↻</span>
+          </button>
+          <select id="sim-warp-select" class="map-select-compact" title="Simulation Speed">
+            <option value="1">1x</option>
+            <option value="2">2x</option>
+            <option value="5" selected>5x Speed</option>
+          </select>
+        </div>
+
+        <!-- Basemaps & Views -->
+        <div class="control-bar-group">
+          <select id="basemap-select" class="map-select-compact" title="Basemap">
+            <option value="cyber-dark" selected>🌑 Dark Ops</option>
+            <option value="google-roadmap">🗺️ Google Roads</option>
+            <option value="google-hybrid">🛰️ Satellite</option>
+            <option value="google-traffic">🚦 Traffic</option>
+            <option value="3d-globe">🌐 3D Globe</option>
+          </select>
+          <button class="map-btn-compact active" id="btn-toggle-hud" title="Show or Hide the Live Operations HUD Card">
+            <span id="btn-toggle-hud-txt">📊 Ops HUD</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Global Operations HUD Sidebar (Top-Right, Collapsible & Dismissible) -->
+      <div class="global-ops-sidebar-hud" id="global-ops-hud">
+        <div class="global-ops-hud-header">
+          <div class="global-ops-title">
+            <span class="badge-dot pulse-emerald"></span>
+            <span>Live Road Operations</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span class="global-ops-live-pill" id="live-ops-clock">REAL-TIME</span>
+            <button class="hud-close-btn" id="btn-close-hud" title="Close this panel">✕</button>
+          </div>
+        </div>
+
+        <div class="global-ops-grid">
+          <div class="ops-stat-item highlight">
+            <span>Active Deliveries:</span>
+            <strong id="ops-stat-deliveries">248</strong>
+          </div>
+          <div class="ops-stat-item highlight-emerald">
+            <span>In Transit:</span>
+            <strong id="ops-stat-transit">173</strong>
+          </div>
+          <div class="ops-stat-item">
+            <span>Colony / Street:</span>
+            <strong id="ops-stat-hyperlocal">64</strong>
+          </div>
+          <div class="ops-stat-item">
+            <span>Intra-City:</span>
+            <strong id="ops-stat-intracity">98</strong>
+          </div>
+          <div class="ops-stat-item">
+            <span>Inter-City:</span>
+            <strong id="ops-stat-intercity">52</strong>
+          </div>
+          <div class="ops-stat-item">
+            <span>Inter-State Hwy:</span>
+            <strong id="ops-stat-interstate">34</strong>
+          </div>
+          <div class="ops-stat-item">
+            <span>Potential Delay:</span>
+            <strong style="color:#f59e0b;" id="ops-stat-delayed">8</strong>
+          </div>
+          <div class="ops-stat-item">
+            <span>At Risk:</span>
+            <strong style="color:#ef4444;" id="ops-stat-risk">4</strong>
+          </div>
+        </div>
+
+        <div class="global-ops-progress-wrap">
+          <div class="ops-progress-row">
+            <span>Road Fleet Utilization</span>
+            <strong class="text-cyan" id="ops-stat-util">82.4%</strong>
+          </div>
+          <div class="ops-mini-track">
+            <div class="ops-mini-fill" style="width: 82.4%;"></div>
+          </div>
+
+          <div class="ops-progress-row" style="margin-top: 4px;">
+            <span>On-Time SLA Delivery</span>
+            <strong class="text-emerald" id="ops-stat-ontime">96.8%</strong>
+          </div>
+          <div class="ops-mini-track">
+            <div class="ops-mini-fill" style="width: 96.8%; background:#10b981;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Floating Vehicle Detail Inspection Card (Bottom-Right) -->
+      <div class="asset-detail-card" id="vehicle-detail-drawer">
+        <div class="asset-card-header">
+          <div class="asset-card-title">
+            <h4 id="veh-card-id">VEHICLE V-104</h4>
+            <span id="veh-card-mode">Road Delivery Vehicle</span>
+          </div>
+          <button class="asset-card-close" id="btn-close-veh-card">✕</button>
+        </div>
+        <div class="asset-card-rows">
+          <div class="asset-card-row">
+            <span>Status:</span>
+            <span style="color:#34d399;" id="veh-card-status">● IN TRANSIT</span>
+          </div>
+          <div class="asset-card-row">
+            <span>Active Corridor:</span>
+            <span id="veh-card-corridor">Hyderabad → Mumbai</span>
+          </div>
+          <div class="asset-card-row">
+            <span>Cargo Payload:</span>
+            <span id="veh-card-cargo">620 / 1000 kg (62%)</span>
+          </div>
+          <div class="asset-card-row">
+            <span>Assigned Driver:</span>
+            <span id="veh-card-driver">DRV-082 (On Duty)</span>
+          </div>
+          <div class="asset-card-row">
+            <span>Telemetry Speed:</span>
+            <span id="veh-card-speed">68.0 km/h</span>
+          </div>
+          <div class="asset-card-row">
+            <span>Destination ETA:</span>
+            <span id="veh-card-eta">02:14</span>
+          </div>
+          <div class="asset-card-row">
+            <span>Active Order:</span>
+            <span style="color:#60a5fa;" id="veh-card-order">ORD-2049</span>
+          </div>
+          <div class="asset-card-row">
+            <span>Route Health:</span>
+            <span style="color:#34d399;" id="veh-card-health">✓ NORMAL (ON-TIME)</span>
+          </div>
+        </div>
+        <div class="asset-card-actions">
+          <button class="btn btn-sm btn-primary" id="btn-track-active-veh">Follow Asset</button>
+          <button class="btn btn-sm btn-secondary" id="btn-zoom-veh-corridor">Zoom Route</button>
+        </div>
+      </div>
+
+      <!-- Floating Order / Delivery Detail Inspection Card (Bottom-Right) -->
+      <div class="asset-detail-card" id="delivery-detail-drawer">
+        <div class="asset-card-header">
+          <div class="asset-card-title">
+            <h4 id="ord-card-id">ORDER ORD-2048</h4>
+            <span id="ord-card-customer">Dubai Gateway Express</span>
+          </div>
+          <button class="asset-card-close" id="btn-close-ord-card">✕</button>
+        </div>
+        <div class="asset-card-rows">
+          <div class="asset-card-row">
+            <span>Origin:</span>
+            <span id="ord-card-origin">Mumbai, India</span>
+          </div>
+          <div class="asset-card-row">
+            <span>Destination:</span>
+            <span id="ord-card-dest">Dubai, UAE</span>
+          </div>
+          <div class="asset-card-row">
+            <span>Cargo Weight:</span>
+            <span id="ord-card-weight">420.0 kg</span>
+          </div>
+          <div class="asset-card-row">
+            <span>Assigned Asset:</span>
+            <span style="color:#60a5fa;" id="ord-card-veh">V-17 (Hyperlocal Electric Van)</span>
+          </div>
+          <div class="asset-card-row">
+            <span>Delivery Status:</span>
+            <span style="color:#34d399;" id="ord-card-status">IN TRANSIT (64%)</span>
+          </div>
+          <div class="asset-card-row">
+            <span>Estimated Arrival:</span>
+            <span id="ord-card-eta">18:42</span>
+          </div>
+          <div class="asset-card-row">
+            <span>Time Window:</span>
+            <span id="ord-card-tw">18:00 - 22:00</span>
+          </div>
+          <div class="asset-card-row">
+            <span>Constraint Audit:</span>
+            <span style="color:#34d399;">✓ All 4 Constraints PASSED</span>
+          </div>
+        </div>
+        <div class="asset-card-actions">
+          <button class="btn btn-sm btn-primary" id="btn-focus-order-map">Focus Delivery</button>
+          <button class="btn btn-sm btn-secondary" id="btn-view-in-orders-tab">View in Ledger</button>
+        </div>
+      </div>
+
+      <!-- Bottom Terminal: Live GPS Telemetry & Audit Stream Drawer -->
+      <div class="telemetry-terminal-drawer" id="telemetry-drawer">
+        <div class="drawer-header" id="drawer-toggle-btn">
+          <div class="drawer-title">
+            <span class="terminal-pulse"></span>
+            <strong>LIVE TELEMETRY STREAM & ADVERSARIAL AUDIT LOG</strong>
+            <span class="stream-counter" id="log-count-badge">0 events</span>
+          </div>
+          <div class="drawer-actions">
+            <button class="btn-icon" id="btn-clear-logs" title="Clear console">✕</button>
+            <span class="chevron-icon">▲</span>
+          </div>
+        </div>
+        <div class="drawer-content" id="telemetry-feed">
+          <div class="log-line log-info">
+            <span class="log-ts">[00:00:00]</span>
+            <span class="log-tag tag-sys">SYS</span>
+            <span>SmartFleet Multi-Depot Optimization & Telemetry Engine initialized. Armed against GPS spoofing.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+  </div> <!-- End #tab-operations -->
+
+  
+  <!-- =====================================================================
+       Tab Page 2: Orders & Dispatch Management
+       ===================================================================== -->
+  <div id="tab-orders" class="tab-page">
+    <div class="page-content-wrapper">
+      <div class="page-header-banner">
+        <div>
+          <h2 class="page-title">Order Ledger & Real-Time Booking Dispatch</h2>
+          <p class="page-subtitle">Multi-depot order ingestion, time window validation, cargo payload allocation, and live solver dispatch.</p>
+        </div>
+        <div class="page-actions">
+          <button class="btn btn-secondary" id="btn-orders-surge">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+            <span>Simulate Order Surge (+4)</span>
+          </button>
+          <button class="btn btn-primary" id="btn-open-book-modal">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <span>Book New Order</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Stats Ribbon -->
+      <div class="stats-ribbon-grid">
+        <div class="ribbon-card">
+          <span class="ribbon-lbl">Total Bookings</span>
+          <strong class="ribbon-val text-cyan" id="orders-stat-total">8 Orders</strong>
+        </div>
+        <div class="ribbon-card">
+          <span class="ribbon-lbl">Assigned & Routed</span>
+          <strong class="ribbon-val text-emerald" id="orders-stat-assigned">8 Active</strong>
+        </div>
+        <div class="ribbon-card">
+          <span class="ribbon-lbl">Pending Solver Gate</span>
+          <strong class="ribbon-val" id="orders-stat-pending">0 Pending</strong>
+        </div>
+        <div class="ribbon-card">
+          <span class="ribbon-lbl">Total Weight Scheduled</span>
+          <strong class="ribbon-val" id="orders-stat-weight">1,820 kg</strong>
+        </div>
+        <div class="ribbon-card">
+          <span class="ribbon-lbl">Total Freight Volume</span>
+          <strong class="ribbon-val" id="orders-stat-volume">16.4 m³</strong>
+        </div>
+      </div>
+
+      <!-- Filter & Search Toolbar -->
+      <div class="orders-toolbar">
+        <div class="search-input-wrap">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input type="text" id="order-search-input" placeholder="Search by Order ID, customer, or destination..." class="table-search-box">
+        </div>
+        <div class="filter-group">
+          <select id="order-filter-status" class="filter-select">
+            <option value="ALL">All Statuses</option>
+            <option value="ASSIGNED">Assigned</option>
+            <option value="PENDING">Pending</option>
+            <option value="CANCELLED">Cancelled</option>
+          </select>
+          <select id="order-filter-vehicle" class="filter-select">
+            <option value="ALL">All Vehicles</option>
+            <option value="V1">Vehicle V1 (SwiftCarrier)</option>
+            <option value="V2">Vehicle V2 (HeavyHauler)</option>
+            <option value="V3">Vehicle V3 (AeroVan)</option>
+            <option value="V4">Vehicle V4 (RapidSprint)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Orders Data Table -->
+      <div class="orders-table-wrapper">
+        <table class="data-table" id="orders-main-table">
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Customer / Destination</th>
+              <th>GPS Coordinates</th>
+              <th>Payload</th>
+              <th>Time Window</th>
+              <th>Service</th>
+              <th>Assigned Vehicle</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="orders-table-body">
+            <!-- Populated dynamically via app.js -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       Tab Page 3: Analytics & Performance Intelligence
+       ===================================================================== -->
+  <div id="tab-analytics" class="tab-page">
+    <div class="page-content-wrapper">
+      <div class="page-header-banner">
+        <div>
+          <h2 class="page-title">Fleet Analytics & Operations Intelligence</h2>
+          <p class="page-subtitle">Real-time mileage abatement, carbon footprint offsets, asset utilization, and solver benchmarking.</p>
+        </div>
+        <div class="page-actions">
+          <span class="badge-mini badge-live">CONTINUOUS COMPUTE</span>
+        </div>
+      </div>
+
+      <!-- Top KPI Ribbon -->
+      <div class="stats-ribbon-grid">
+        <div class="ribbon-card">
+          <span class="ribbon-lbl">Distance Abatement</span>
+          <strong class="ribbon-val text-emerald">-24.2% Saved</strong>
+        </div>
+        <div class="ribbon-card">
+          <span class="ribbon-lbl">Capacity Load Factor</span>
+          <strong class="ribbon-val text-cyan">82.4% Optimal</strong>
+        </div>
+        <div class="ribbon-card">
+          <span class="ribbon-lbl">Carbon Emissions Avoided</span>
+          <strong class="ribbon-val text-emerald">184.2 kg CO₂</strong>
+        </div>
+        <div class="ribbon-card">
+          <span class="ribbon-lbl">On-Time SLA Rate</span>
+          <strong class="ribbon-val text-emerald">100.0% (0 Breaches)</strong>
+        </div>
+        <div class="ribbon-card">
+          <span class="ribbon-lbl">Net Shift Savings</span>
+          <strong class="ribbon-val text-cyan">$142.50 USD</strong>
+        </div>
+      </div>
+
+      <!-- 2x2 Analytics Visual Panels -->
+      <div class="analytics-panels-grid">
+        <!-- Panel 1: Route Efficiency -->
+        <div class="analytics-card">
+          <div class="analytics-card-header">
+            <h3>Mileage Comparison: Unoptimized vs SmartFleet</h3>
+            <span class="card-tag tag-emerald">-44.5 km Saved</span>
+          </div>
+          <p class="analytics-card-desc">Comparison of total cumulative road kilometers traveled across all delivery stops:</p>
+          <div class="bar-chart-container">
+            <div class="bar-group">
+              <div class="bar-label-row">
+                <span>Traditional Naive Routing (Point-to-Point)</span>
+                <strong>184.0 km</strong>
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill bar-fill-muted" style="width: 100%;"></div>
+              </div>
+            </div>
+            <div class="bar-group">
+              <div class="bar-label-row">
+                <span>SmartFleet VRPTW Optimized Route</span>
+                <strong class="text-emerald">139.5 km (-24.2%)</strong>
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill bar-fill-emerald" style="width: 75.8%;"></div>
+              </div>
+            </div>
+          </div>
+          <div class="chart-summary-footer">
+            <span>Calculated using Euclidean Haversine distance with road corridor tortuosity factor (1.28x).</span>
+          </div>
+        </div>
+
+        <!-- Panel 2: Fleet Load Allocation -->
+        <div class="analytics-card">
+          <div class="analytics-card-header">
+            <h3>Vehicle Capacity & Volume Load Factor</h3>
+            <span class="card-tag tag-cyan">Balanced Allocation</span>
+          </div>
+          <p class="analytics-card-desc">Weight payload versus maximum vehicle gross rating capacity:</p>
+          <div class="fleet-load-stack">
+            <div class="load-vehicle-row">
+              <div class="load-meta">
+                <strong>V1 (SwiftCarrier) - Depot A</strong>
+                <span>720 kg / 1,500 kg (48.0%)</span>
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill bar-fill-blue" style="width: 48%;"></div>
+              </div>
+            </div>
+            <div class="load-vehicle-row">
+              <div class="load-meta">
+                <strong>V2 (HeavyHauler) - Depot B</strong>
+                <span>1,450 kg / 2,400 kg (60.4%)</span>
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill bar-fill-emerald" style="width: 60.4%;"></div>
+              </div>
+            </div>
+            <div class="load-vehicle-row">
+              <div class="load-meta">
+                <strong>V3 (AeroVan) - Depot C</strong>
+                <span>880 kg / 1,600 kg (55.0%)</span>
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill bar-fill-blue" style="width: 55%;"></div>
+              </div>
+            </div>
+            <div class="load-vehicle-row">
+              <div class="load-meta">
+                <strong>V4 (RapidSprint) - Depot B</strong>
+                <span>0 kg / 1,000 kg (Standby Reserve)</span>
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill bar-fill-muted" style="width: 5%;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel 3: Operating Cost Breakdown -->
+        <div class="analytics-card">
+          <div class="analytics-card-header">
+            <h3>Operational Expense Breakdown</h3>
+            <span class="card-tag tag-blue">$283.73 Total Cost</span>
+          </div>
+          <p class="analytics-card-desc">Proportional distribution of total shift operating expenses:</p>
+          <div class="cost-distribution-meter">
+            <div class="meter-segment seg-dist" style="width: 48%;" title="Distance Cost: 48%"></div>
+            <div class="meter-segment seg-fuel" style="width: 26%;" title="Fuel Consumption: 26%"></div>
+            <div class="meter-segment seg-labor" style="width: 18%;" title="Driver Labor: 18%"></div>
+            <div class="meter-segment seg-rebal" style="width: 8%;" title="Inter-Depot Transfers: 8%"></div>
+          </div>
+          <div class="cost-legend-grid">
+            <div class="cost-legend-item">
+              <span class="legend-color-chip chip-dist"></span>
+              <span>Distance Base ($136.20 - 48%)</span>
+            </div>
+            <div class="cost-legend-item">
+              <span class="legend-color-chip chip-fuel"></span>
+              <span>Fuel Cost ($73.80 - 26%)</span>
+            </div>
+            <div class="cost-legend-item">
+              <span class="legend-color-chip chip-labor"></span>
+              <span>Driver Shifts ($51.07 - 18%)</span>
+            </div>
+            <div class="cost-legend-item">
+              <span class="legend-color-chip chip-rebal"></span>
+              <span>Inter-Depot Rebalance ($22.66 - 8%)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel 4: Solver Latency Benchmark -->
+        <div class="analytics-card">
+          <div class="analytics-card-header">
+            <h3>Solver Latency & Optimization Benchmark</h3>
+            <span class="card-tag tag-emerald">&lt;150ms Guaranteed</span>
+          </div>
+          <p class="analytics-card-desc">Execution time comparison between solver strategies on 50 dynamic stops:</p>
+          <div class="bar-chart-container">
+            <div class="bar-group">
+              <div class="bar-label-row">
+                <span>Exact Mixed-Integer Linear Programming (MILP)</span>
+                <strong>12,400 ms (12.4s)</strong>
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill bar-fill-muted" style="width: 100%;"></div>
+              </div>
+            </div>
+            <div class="bar-group">
+              <div class="bar-label-row">
+                <span>Standard Unconstrained Greedy Solver</span>
+                <strong>350 ms</strong>
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill bar-fill-muted" style="width: 25%;"></div>
+              </div>
+            </div>
+            <div class="bar-group">
+              <div class="bar-label-row">
+                <span>SmartFleet Incremental Candidate Insertion</span>
+                <strong class="text-emerald">124 ms (Sub-150ms SLA)</strong>
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill bar-fill-emerald" style="width: 8%;"></div>
+              </div>
+            </div>
+          </div>
+          <div class="chart-summary-footer">
+            <span>Candidate vehicle filtering eliminates 90% of infeasible search branches before cost computation.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       Tab Page 4: Multi-Depot Hub Network
+       ===================================================================== -->
+  <div id="tab-depots" class="tab-page">
+    <div class="page-content-wrapper">
+      <div class="page-header-banner">
+        <div>
+          <h2 class="page-title">Multi-Depot Logistics Hubs & Inter-Facility Network</h2>
+          <p class="page-subtitle">Unified Tri-Depot Bay Area Infrastructure, cross-dock capacity, inventory staging, and vehicle rebalancing.</p>
+        </div>
+        <div class="page-actions">
+          <button class="btn btn-primary" id="btn-depots-rebalance">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+            <span>Evaluate Dynamic Rebalance</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Tri-Depot Cards Grid -->
+      <div class="depot-showcase-grid">
+        <!-- Depot A -->
+        <div class="depot-showcase-card">
+          <div class="depot-showcase-header">
+            <div>
+              <span class="depot-code-badge">DEPOT A</span>
+              <h3>Urban Center (San Francisco)</h3>
+              <p class="depot-location-txt">37.7749° N, 122.4194° W • Financial District & SFO Corridor</p>
+            </div>
+            <div class="depot-status-indicator status-online">ACTIVE</div>
+          </div>
+          <div class="depot-metrics-list">
+            <div class="depot-metric-row">
+              <span>Facility Type:</span>
+              <strong>High-Density Metropolitan Cross-Dock</strong>
+            </div>
+            <div class="depot-metric-row">
+              <span>Active Dock Doors:</span>
+              <strong>8 / 10 Bays Occupied</strong>
+            </div>
+            <div class="depot-metric-row">
+              <span>Staged Cargo:</span>
+              <strong class="text-cyan">1,420 kg / 3,000 kg (47.3%)</strong>
+            </div>
+            <div class="depot-metric-row">
+              <span>Stationed Vehicles:</span>
+              <strong>Vehicle V1 (SwiftCarrier)</strong>
+            </div>
+            <div class="depot-metric-row">
+              <span>Outbound Transfer Rate:</span>
+              <strong>$1.80 / km deadhead fee</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Depot B -->
+        <div class="depot-showcase-card">
+          <div class="depot-showcase-header">
+            <div>
+              <span class="depot-code-badge">DEPOT B</span>
+              <h3>Industrial Hub (San Jose)</h3>
+              <p class="depot-location-txt">37.3382° N, 121.8863° W • Silicon Valley Warehousing Corridor</p>
+            </div>
+            <div class="depot-status-indicator status-online">ACTIVE</div>
+          </div>
+          <div class="depot-metrics-list">
+            <div class="depot-metric-row">
+              <span>Facility Type:</span>
+              <strong>Heavy Regional Fulfillment Center</strong>
+            </div>
+            <div class="depot-metric-row">
+              <span>Active Dock Doors:</span>
+              <strong>12 / 15 Bays Occupied</strong>
+            </div>
+            <div class="depot-metric-row">
+              <span>Staged Cargo:</span>
+              <strong class="text-emerald">3,100 kg / 6,000 kg (51.6%)</strong>
+            </div>
+            <div class="depot-metric-row">
+              <span>Stationed Vehicles:</span>
+              <strong>Vehicle V2 (HeavyHauler), V4 (RapidSprint)</strong>
+            </div>
+            <div class="depot-metric-row">
+              <span>Outbound Transfer Rate:</span>
+              <strong>$2.20 / km deadhead fee</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Depot C -->
+        <div class="depot-showcase-card">
+          <div class="depot-showcase-header">
+            <div>
+              <span class="depot-code-badge">DEPOT C</span>
+              <h3>Port District (Oakland)</h3>
+              <p class="depot-location-txt">37.8044° N, 122.2712° W • Intermodal Maritime Cargo Terminal</p>
+            </div>
+            <div class="depot-status-indicator status-online">ACTIVE</div>
+          </div>
+          <div class="depot-metrics-list">
+            <div class="depot-metric-row">
+              <span>Facility Type:</span>
+              <strong>Intermodal Maritime Container Freight Station</strong>
+            </div>
+            <div class="depot-metric-row">
+              <span>Active Dock Doors:</span>
+              <strong>6 / 8 Bays Occupied</strong>
+            </div>
+            <div class="depot-metric-row">
+              <span>Staged Cargo:</span>
+              <strong class="text-cyan">2,050 kg / 4,500 kg (45.5%)</strong>
+            </div>
+            <div class="depot-metric-row">
+              <span>Stationed Vehicles:</span>
+              <strong>Vehicle V3 (AeroVan)</strong>
+            </div>
+            <div class="depot-metric-row">
+              <span>Outbound Transfer Rate:</span>
+              <strong>$1.95 / km deadhead fee</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Inter-Depot Distance Matrix Table -->
+      <div class="matrix-section">
+        <h3 class="section-title">Inter-Facility Relocation Distance Matrix</h3>
+        <p class="section-desc">Evaluated by the Cost-Aware Rebalancing Engine to decide when deadhead vehicle transfers save more money than customer delay penalties:</p>
+        <table class="data-table matrix-table">
+          <thead>
+            <tr>
+              <th>From / To</th>
+              <th>Depot A (SF Urban)</th>
+              <th>Depot B (SJ Industrial)</th>
+              <th>Depot C (OAK Port)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Depot A (SF Urban)</strong></td>
+              <td>0.0 km (0 min)</td>
+              <td>78.2 km (~55 min, $140.76)</td>
+              <td>18.4 km (~22 min, $33.12)</td>
+            </tr>
+            <tr>
+              <td><strong>Depot B (SJ Industrial)</strong></td>
+              <td>78.2 km (~55 min, $172.04)</td>
+              <td>0.0 km (0 min)</td>
+              <td>68.5 km (~48 min, $150.70)</td>
+            </tr>
+            <tr>
+              <td><strong>Depot C (OAK Port)</strong></td>
+              <td>18.4 km (~22 min, $35.88)</td>
+              <td>68.5 km (~48 min, $133.58)</td>
+              <td>0.0 km (0 min)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       Tab Page 5: Cybersecurity & Telemetry Integrity
+       ===================================================================== -->
+  <div id="tab-security" class="tab-page">
+    <div class="page-content-wrapper">
+      <div class="page-header-banner">
+        <div>
+          <h2 class="page-title">Adversarial Cybersecurity & Telemetry Integrity Center</h2>
+          <p class="page-subtitle">Real-time GPS spoofing anomaly detection, dead-reckoning offline buffering, and tamper-resistant audit trails.</p>
+        </div>
+        <div class="page-actions">
+          <button class="btn btn-outline-rose" id="btn-security-test-spoof">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            <span>Simulate Spoof Attack</span>
+          </button>
+          <button class="btn btn-outline-emerald" id="btn-security-toggle-blackout">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path><path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path></svg>
+            <span>Toggle Network Blackout</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Security Status Highlights -->
+      <div class="stats-ribbon-grid">
+        <div class="ribbon-card">
+          <span class="ribbon-lbl">Anomaly Filter Status</span>
+          <strong class="ribbon-val text-emerald">ARMED & ACTIVE</strong>
+        </div>
+        <div class="ribbon-card">
+          <span class="ribbon-lbl">Max Velocity Threshold</span>
+          <strong class="ribbon-val text-cyan">120.0 km/h (Strict)</strong>
+        </div>
+        <div class="ribbon-card">
+          <span class="ribbon-lbl">Max Acceleration Bound</span>
+          <strong class="ribbon-val">8.0 m/s²</strong>
+        </div>
+        <div class="ribbon-card">
+          <span class="ribbon-lbl">Spoofed Pings Intercepted</span>
+          <strong class="ribbon-val text-cyan" id="sec-spoof-count">1 Intercepted</strong>
+        </div>
+        <div class="ribbon-card">
+          <span class="ribbon-lbl">Audit Persistence</span>
+          <strong class="ribbon-val text-emerald">SQLite (WAL Mode)</strong>
+        </div>
+      </div>
+
+      <!-- Security Audit Stream Table -->
+      <div class="security-table-section">
+        <div class="section-title-wrap">
+          <h3 class="section-title">Live SQLite Telemetry Audit Trail (Last 50 Events)</h3>
+          <button class="btn btn-sm btn-secondary" id="btn-refresh-audit">Refresh Audit Logs</button>
+        </div>
+        <div class="orders-table-wrapper">
+          <table class="data-table" id="security-audit-table">
+            <thead>
+              <tr>
+                <th>Log ID</th>
+                <th>Timestamp</th>
+                <th>Vehicle ID</th>
+                <th>Reported GPS Coordinates</th>
+                <th>Reported Speed</th>
+                <th>Integrity Verdict</th>
+                <th>Audit Status Note</th>
+              </tr>
+            </thead>
+            <tbody id="security-table-body">
+              <!-- Populated dynamically via app.js -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       Tab Page 6: System Architecture, Math Model & Mentor Presentation Docs
+       ===================================================================== -->
+  <div id="tab-docs" class="tab-page">
+    <div class="page-content-wrapper">
+      <div class="page-header-banner">
+        <div>
+          <h2 class="page-title">System Architecture, Mathematical Model & Documentation</h2>
+          <p class="page-subtitle">Comprehensive technical specification, operations research formulations, algorithmic complexity, and REST API documentation.</p>
+        </div>
+      </div>
+
+      <!-- Tier 1: 5-Stage Architecture Flow -->
+      <div class="docs-section">
+        <h3 class="section-title">1. Real-Time End-to-End System Pipeline</h3>
+        <p class="section-desc">How telemetry signals and dynamic events travel through our sub-150ms orchestration engine:</p>
+        <div class="arch-flow-grid">
+          <div class="arch-flow-card">
+            <div class="arch-step-badge">STAGE 1</div>
+            <h4>Edge Telemetry & Event Ingestion</h4>
+            <p>Vehicles broadcast 5Hz GPS pings over WebSockets/REST. Incoming customer bookings enter an in-memory event stream queue.</p>
+          </div>
+          <div class="arch-flow-arrow">➔</div>
+          <div class="arch-flow-card">
+            <div class="arch-step-badge">STAGE 2</div>
+            <h4>Constraint & Anomaly Gate</h4>
+            <p>Calculates velocity differentials to block GPS spoofing. Spatial pruning immediately filters out 90% of infeasible vehicles.</p>
+          </div>
+          <div class="arch-flow-arrow">➔</div>
+          <div class="arch-flow-card">
+            <div class="arch-step-badge">STAGE 3</div>
+            <h4>VRPTW Heuristic Solver</h4>
+            <p>Evaluates incremental insertion cost matrices across time windows, payload capacities, and driver shift constraints in &lt;150ms.</p>
+          </div>
+          <div class="arch-flow-arrow">➔</div>
+          <div class="arch-flow-card">
+            <div class="arch-step-badge">STAGE 4</div>
+            <h4>WAL SQLite Persistence</h4>
+            <p>State synchronized atomically to SQLite in Write-Ahead Logging mode for crash-recovery and auditability.</p>
+          </div>
+          <div class="arch-flow-arrow">➔</div>
+          <div class="arch-flow-card">
+            <div class="arch-step-badge">STAGE 5</div>
+            <h4>Dual Viewport Broadcast</h4>
+            <p>Publishes synchronized route updates to the 3D WebGL Globe and 2D Google Maps Tactical view in sub-second latency.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tier 2: Mathematical Formulation -->
+      <div class="docs-section">
+        <h3 class="section-title">2. Operations Research Mathematical Formulation</h3>
+        <div class="math-box-large">
+          <h4>Objective Function (Cost Minimization):</h4>
+          <code>Minimize Z = ∑ (c_dist * Distance_ij) + ∑ (c_fuel * Fuel_ij) + ∑ (c_delay * max(0, Arrival_i - Latest_i)) + ∑ (c_rebal * Rebalance_Depot)</code>
+          <h4 style="margin-top: 14px;">Subject to Hard Operational Constraints:</h4>
+          <ul>
+            <li><strong>Payload Capacity Bound:</strong> Total payload weight ∑ w_i ≤ Vehicle Capacity W_max and volume ∑ v_i ≤ V_max at all times.</li>
+            <li><strong>Customer Delivery Time Windows:</strong> Arrival time A_i satisfies Earliest_i ≤ A_i ≤ Latest_i. Early arrivals wait; late arrivals incur heavy penalties.</li>
+            <li><strong>Driver Hours of Service (HOS):</strong> Cumulative driving + service time T_shift ≤ 10.0 hours (600 minutes) per shift.</li>
+            <li><strong>Asset Operational Readiness:</strong> Vehicle state == ACTIVE. Broken or telemetry-quarantined assets are excluded from assignment.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Tier 3: REST API Reference -->
+      <div class="docs-section">
+        <h3 class="section-title">3. REST API Interface Reference</h3>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Method</th>
+              <th>Endpoint</th>
+              <th>Description</th>
+              <th>Typical Latency</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="method-badge get">GET</span></td>
+              <td><code>/api/state</code></td>
+              <td>Returns full fleet telemetry, depots, active orders, routes, KPIs and audit counters.</td>
+              <td>&lt; 5 ms</td>
+            </tr>
+            <tr>
+              <td><span class="method-badge post">POST</span></td>
+              <td><code>/api/optimize</code></td>
+              <td>Triggers full multi-depot VRPTW constraint gate and solver pipeline.</td>
+              <td>&lt; 140 ms</td>
+            </tr>
+            <tr>
+              <td><span class="method-badge post">POST</span></td>
+              <td><code>/api/add-order</code></td>
+              <td>Injects custom customer delivery order dynamically with payload and time window.</td>
+              <td>&lt; 120 ms</td>
+            </tr>
+            <tr>
+              <td><span class="method-badge post">POST</span></td>
+              <td><code>/api/breakdown</code></td>
+              <td>Ejects vehicle from active pool and redistributes orders to compliant vehicles.</td>
+              <td>&lt; 130 ms</td>
+            </tr>
+            <tr>
+              <td><span class="method-badge post">POST</span></td>
+              <td><code>/api/gps-spoof</code></td>
+              <td>Simulates illegal velocity jump and locks vehicle feed with alert modal.</td>
+              <td>&lt; 10 ms</td>
+            </tr>
+            <tr>
+              <td><span class="method-badge post">POST</span></td>
+              <td><code>/api/toggle-blackout</code></td>
+              <td>Toggles cellular dead-zone mode and enables dead-reckoning buffering.</td>
+              <td>&lt; 10 ms</td>
+            </tr>
+            <tr>
+              <td><span class="method-badge post">POST</span></td>
+              <td><code>/api/cross-depot-rebalance</code></td>
+              <td>Evaluates cost-aware inter-depot vehicle transfer between Depot A, B, and C.</td>
+              <td>&lt; 60 ms</td>
+            </tr>
+            <tr>
+              <td><span class="method-badge get">GET</span></td>
+              <td><code>/api/audit-logs</code></td>
+              <td>Fetches recent SQLite security audit logs for tamper inspection.</td>
+              <td>&lt; 15 ms</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Global Enterprise Status Footer -->
+  <footer class="site-footer">
+    <div class="footer-left">
+      <span class="footer-dot pulse-green"></span>
+      <strong>SmartFleet OR Engine</strong>
+      <span>&bull; Real-Time Multi-Depot Fleet Orchestration</span>
+    </div>
+    <div class="footer-center">
+      <span>Operational State: <strong>NOMINAL</strong></span>
+      <span>&bull;</span>
+      <span>Solver SLA: <strong>&lt;150ms</strong></span>
+      <span>&bull;</span>
+      <span>Database: <strong>SQLite (WAL Mode)</strong></span>
+    </div>
+    <div class="footer-right">
+      <span>Decent Two-Color System: <strong style="color:var(--color-primary-light);">Royal Blue</strong> & <strong style="color:var(--color-secondary-light);">Calm Emerald</strong></span>
+      <span>&bull; v2.4.0-enterprise</span>
+    </div>
+  </footer>
+
+  <!-- Book New Order Interactive Modal -->
+  <div class="modal-backdrop" id="book-order-modal">
+    <div class="modal-dialog modal-dialog-lg">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">Book New Dynamic Customer Delivery</h3>
+          <p class="modal-subtitle">Inject a real-time order into the live VRPTW solver engine.</p>
+        </div>
+        <button class="btn-icon" id="btn-close-book-modal">✕</button>
+      </div>
+      <form id="form-book-order">
+        <div class="modal-body-form">
+          <div class="form-row">
+            <div class="form-group flex-2">
+              <label for="book-customer-name">Customer / Facility Name</label>
+              <input type="text" id="book-customer-name" class="form-input" placeholder="e.g. Acme Logistics Lab" required>
+            </div>
+            <div class="form-group flex-1">
+              <label for="book-location-preset">Quick Preset</label>
+              <select id="book-location-preset" class="form-input">
+                <option value="custom">Custom Coordinates</option>
+                <option value="sf-fidi">San Francisco Financial District</option>
+                <option value="oak-port">Oakland Intermodal Terminal</option>
+                <option value="sj-tech">San Jose Innovation Campus</option>
+                <option value="sfo-cargo">SFO Cargo Freight Hub</option>
+                <option value="fremont-ind">Fremont Manufacturing Corridor</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="book-lat">Latitude</label>
+              <input type="number" step="0.0001" id="book-lat" class="form-input" value="37.7749" required>
+            </div>
+            <div class="form-group flex-1">
+              <label for="book-lon">Longitude</label>
+              <input type="number" step="0.0001" id="book-lon" class="form-input" value="-122.4194" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="book-weight">Cargo Weight (kg)</label>
+              <input type="number" step="10" id="book-weight" class="form-input" value="180" min="10" max="2500" required>
+            </div>
+            <div class="form-group flex-1">
+              <label for="book-volume">Cargo Volume (m³)</label>
+              <input type="number" step="0.1" id="book-volume" class="form-input" value="1.5" min="0.1" max="25.0" required>
+            </div>
+            <div class="form-group flex-1">
+              <label for="book-service">Service Duration (min)</label>
+              <input type="number" step="1" id="book-service" class="form-input" value="15" min="5" max="60" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="book-tw-start">Earliest Delivery (T+ min)</label>
+              <input type="number" step="5" id="book-tw-start" class="form-input" value="10" min="0" required>
+            </div>
+            <div class="form-group flex-1">
+              <label for="book-tw-end">Latest Delivery (T+ min)</label>
+              <input type="number" step="5" id="book-tw-end" class="form-input" value="90" min="15" required>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="btn-cancel-book">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-book">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <span>Dispatch & Re-Optimize</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+
+  <!-- Adversarial Attack Alert Modal -->
+  <div class="modal-backdrop" id="alert-modal">
+    <div class="modal-dialog">
+      <div class="modal-header-alert">
+        <div class="alert-icon-ring">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2.5">
+            <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+        </div>
+        <div>
+          <h3 class="alert-heading">SECURITY WARNING: GPS SPOOFING INTERCEPTED</h3>
+          <p class="alert-subtext">Telemetry Ingestor anomaly filter automatically rejected fraudulent telemetry ping.</p>
+        </div>
+      </div>
+      <div class="modal-body-content" id="alert-modal-body">
+        <!-- Injected details -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-danger" id="btn-dismiss-alert">Acknowledge Alert</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <!-- Three.js & OrbitControls for 3D World Globe -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <!-- 3D World Globe Engine -->
+  <script src="globe3d.js"></script>
+  <!-- Application JS -->
+  <script src="app.js"></script>
+</body>
+</html>
