@@ -1,0 +1,390 @@
+# Script to update optimizer_core.py to 100% ROAD DELIVERY ONLY across all geographic tiers
+
+with open(r'c:\Users\Moksha Yagna Sree\.antigravity-ide\optimizer_core.py', 'r', encoding='utf-8') as f:
+    content = f.read()
+
+# Replace the vehicles section and orders section
+old_block_start = "        # 2. Multi-Modal Global Fleet (Road, Air, Sea, Rail)"
+old_block_end = "        # Baseline routes for active global vehicles"
+
+new_vehicles_and_orders = """        # 2. Global Real-Time Road Delivery Fleet (Hyperlocal, City, Inter-City, Inter-State)
+        self.vehicles = {
+            "V-17": Vehicle(
+                id="V-17",
+                name="Hyperlocal Electric Van V-17",
+                home_depot_id="HUB_HYD",
+                current_depot_id="HUB_HYD",
+                current_location=Location(17.4947, 78.3970),
+                max_weight_kg=500.0,
+                max_volume_m3=4.5,
+                cost_per_km=0.85,
+                fuel_cost_per_km=0.15,
+                hos=DriverHOS(),
+                status=VehicleStatus.ACTIVE,
+                color_hex="#059669",
+                transport_mode="ROAD",
+                origin_name="Colony A (KPHB)",
+                destination_name="Colony B (Madhapur)",
+                driver_name="DRV-017 (On Duty)",
+                route_status="NORMAL",
+                speed_kmh=38.0,
+                eta_str="14 min",
+                assigned_order_id="ORD-2048"
+            ),
+            "V-204": Vehicle(
+                id="V-204",
+                name="Urban Express Van V-204",
+                home_depot_id="HUB_HYD",
+                current_depot_id="HUB_HYD",
+                current_location=Location(17.4842, 78.3889),
+                max_weight_kg=500.0,
+                max_volume_m3=5.0,
+                cost_per_km=0.95,
+                fuel_cost_per_km=0.20,
+                hos=DriverHOS(),
+                status=VehicleStatus.ACTIVE,
+                color_hex="#2563eb",
+                transport_mode="ROAD",
+                origin_name="Kukatpally, Hyderabad",
+                destination_name="Gachibowli, Hyderabad",
+                driver_name="DRV-082 (On Duty)",
+                route_status="NORMAL",
+                speed_kmh=42.0,
+                eta_str="18 min",
+                assigned_order_id="ORD-2049"
+            ),
+            "V-102": Vehicle(
+                id="V-102",
+                name="City Courier Van V-102",
+                home_depot_id="HUB_HYD",
+                current_depot_id="HUB_HYD",
+                current_location=Location(17.4319, 78.4073),
+                max_weight_kg=400.0,
+                max_volume_m3=3.8,
+                cost_per_km=0.90,
+                fuel_cost_per_km=0.18,
+                hos=DriverHOS(),
+                status=VehicleStatus.ACTIVE,
+                color_hex="#059669",
+                transport_mode="ROAD",
+                origin_name="Jubilee Hills",
+                destination_name="Banjara Hills",
+                driver_name="DRV-102 (On Duty)",
+                route_status="NORMAL",
+                speed_kmh=35.0,
+                eta_str="12 min",
+                assigned_order_id="ORD-2050"
+            ),
+            "V-103": Vehicle(
+                id="V-103",
+                name="Twin-City Road Runner V-103",
+                home_depot_id="HUB_HYD",
+                current_depot_id="HUB_HYD",
+                current_location=Location(17.3616, 78.4747),
+                max_weight_kg=800.0,
+                max_volume_m3=8.0,
+                cost_per_km=1.15,
+                fuel_cost_per_km=0.25,
+                hos=DriverHOS(),
+                status=VehicleStatus.ACTIVE,
+                color_hex="#2563eb",
+                transport_mode="ROAD",
+                origin_name="Hyderabad (Charminar)",
+                destination_name="Secunderabad (Clock Tower)",
+                driver_name="DRV-103 (On Duty)",
+                route_status="NORMAL",
+                speed_kmh=45.0,
+                eta_str="24 min",
+                assigned_order_id="ORD-2051"
+            ),
+            "V-104": Vehicle(
+                id="V-104",
+                name="Inter-City Carrier V-104",
+                home_depot_id="HUB_HYD",
+                current_depot_id="HUB_HYD",
+                current_location=Location(17.3850, 78.4867),
+                max_weight_kg=1200.0,
+                max_volume_m3=12.0,
+                cost_per_km=1.40,
+                fuel_cost_per_km=0.30,
+                hos=DriverHOS(),
+                status=VehicleStatus.ACTIVE,
+                color_hex="#059669",
+                transport_mode="ROAD",
+                origin_name="Hyderabad",
+                destination_name="Warangal",
+                driver_name="DRV-104 (On Duty)",
+                route_status="NORMAL",
+                speed_kmh=68.0,
+                eta_str="02:14",
+                assigned_order_id="ORD-2052"
+            ),
+            "V-105": Vehicle(
+                id="V-105",
+                name="Inter-State Heavy Hauler V-105",
+                home_depot_id="HUB_HYD",
+                current_depot_id="HUB_BOM",
+                current_location=Location(17.3850, 78.4867),
+                max_weight_kg=8000.0,
+                max_volume_m3=60.0,
+                cost_per_km=2.40,
+                fuel_cost_per_km=0.65,
+                hos=DriverHOS(),
+                status=VehicleStatus.ACTIVE,
+                color_hex="#2563eb",
+                transport_mode="ROAD",
+                origin_name="Hyderabad (Telangana)",
+                destination_name="Mumbai (Maharashtra)",
+                driver_name="DRV-105 (On Duty)",
+                route_status="NORMAL",
+                speed_kmh=65.0,
+                eta_str="09:30",
+                assigned_order_id="ORD-2053"
+            ),
+            "V-106": Vehicle(
+                id="V-106",
+                name="National Highway Hauler V-106",
+                home_depot_id="HUB_BOM",
+                current_depot_id="HUB_DEL",
+                current_location=Location(19.0760, 72.8777),
+                max_weight_kg=10000.0,
+                max_volume_m3=75.0,
+                cost_per_km=2.80,
+                fuel_cost_per_km=0.75,
+                hos=DriverHOS(),
+                status=VehicleStatus.ACTIVE,
+                color_hex="#059669",
+                transport_mode="ROAD",
+                origin_name="Mumbai (Maharashtra)",
+                destination_name="Delhi (NCR)",
+                driver_name="DRV-106 (On Duty)",
+                route_status="NORMAL",
+                speed_kmh=72.0,
+                eta_str="18:40",
+                assigned_order_id="ORD-2054"
+            ),
+            "V-107": Vehicle(
+                id="V-107",
+                name="South Corridor Freight V-107",
+                home_depot_id="HUB_BLR",
+                current_depot_id="HUB_HYD",
+                current_location=Location(12.9716, 77.5946),
+                max_weight_kg=6000.0,
+                max_volume_m3=45.0,
+                cost_per_km=2.10,
+                fuel_cost_per_km=0.55,
+                hos=DriverHOS(),
+                status=VehicleStatus.ACTIVE,
+                color_hex="#2563eb",
+                transport_mode="ROAD",
+                origin_name="Bengaluru (Karnataka)",
+                destination_name="Hyderabad (Telangana)",
+                driver_name="DRV-107 (On Duty)",
+                route_status="POTENTIAL_DELAY",
+                speed_kmh=70.0,
+                eta_str="07:15",
+                assigned_order_id="ORD-2055"
+            ),
+            "V-108": Vehicle(
+                id="V-108",
+                name="Northern Highway Express V-108",
+                home_depot_id="HUB_DEL",
+                current_depot_id="HUB_DEL",
+                current_location=Location(28.6139, 77.2090),
+                max_weight_kg=4000.0,
+                max_volume_m3=32.0,
+                cost_per_km=1.80,
+                fuel_cost_per_km=0.45,
+                hos=DriverHOS(),
+                status=VehicleStatus.ACTIVE,
+                color_hex="#059669",
+                transport_mode="ROAD",
+                origin_name="Delhi",
+                destination_name="Jaipur (Rajasthan)",
+                driver_name="DRV-108 (On Duty)",
+                route_status="NORMAL",
+                speed_kmh=68.0,
+                eta_str="04:20",
+                assigned_order_id="ORD-2056"
+            ),
+            "V-109": Vehicle(
+                id="V-109",
+                name="Continental EuroTruck V-109",
+                home_depot_id="HUB_FRA",
+                current_depot_id="HUB_CDG",
+                current_location=Location(50.1109, 8.6821),
+                max_weight_kg=12000.0,
+                max_volume_m3=90.0,
+                cost_per_km=2.60,
+                fuel_cost_per_km=0.70,
+                hos=DriverHOS(),
+                status=VehicleStatus.ACTIVE,
+                color_hex="#2563eb",
+                transport_mode="ROAD",
+                origin_name="Frankfurt (Germany)",
+                destination_name="Paris (France)",
+                driver_name="DRV-109 (On Duty)",
+                route_status="NORMAL",
+                speed_kmh=82.0,
+                eta_str="05:45",
+                assigned_order_id="ORD-2057"
+            ),
+            "V-110": Vehicle(
+                id="V-110",
+                name="Interstate Hauler V-110",
+                home_depot_id="HUB_NYC",
+                current_depot_id="HUB_ORD",
+                current_location=Location(40.7128, -74.0060),
+                max_weight_kg=15000.0,
+                max_volume_m3=110.0,
+                cost_per_km=2.90,
+                fuel_cost_per_km=0.80,
+                hos=DriverHOS(),
+                status=VehicleStatus.ACTIVE,
+                color_hex="#059669",
+                transport_mode="ROAD",
+                origin_name="New York (NY)",
+                destination_name="Chicago (IL)",
+                driver_name="DRV-110 (On Duty)",
+                route_status="NORMAL",
+                speed_kmh=88.0,
+                eta_str="12:30",
+                assigned_order_id="ORD-2058"
+            ),
+            "V-111": Vehicle(
+                id="V-111",
+                name="Pacific Highway Hauler V-111",
+                home_depot_id="HUB_LAX",
+                current_depot_id="HUB_SFO",
+                current_location=Location(34.0522, -118.2437),
+                max_weight_kg=8000.0,
+                max_volume_m3=60.0,
+                cost_per_km=2.20,
+                fuel_cost_per_km=0.55,
+                hos=DriverHOS(),
+                status=VehicleStatus.ACTIVE,
+                color_hex="#2563eb",
+                transport_mode="ROAD",
+                origin_name="Los Angeles (CA)",
+                destination_name="San Francisco (CA)",
+                driver_name="DRV-111 (On Duty)",
+                route_status="NORMAL",
+                speed_kmh=85.0,
+                eta_str="05:50",
+                assigned_order_id="ORD-2059"
+            ),
+            "V-112": Vehicle(
+                id="V-112",
+                name="Hume Highway Transport V-112",
+                home_depot_id="HUB_SYD",
+                current_depot_id="HUB_MEL",
+                current_location=Location(-33.8688, 151.2093),
+                max_weight_kg=10000.0,
+                max_volume_m3=75.0,
+                cost_per_km=2.50,
+                fuel_cost_per_km=0.65,
+                hos=DriverHOS(),
+                status=VehicleStatus.ACTIVE,
+                color_hex="#059669",
+                transport_mode="ROAD",
+                origin_name="Sydney (NSW)",
+                destination_name="Melbourne (VIC)",
+                driver_name="DRV-112 (On Duty)",
+                route_status="NORMAL",
+                speed_kmh=86.0,
+                eta_str="08:40",
+                assigned_order_id="ORD-2060"
+            ),
+            "V-113": Vehicle(
+                id="V-113",
+                name="Apartment Doorstep Runner V-113",
+                home_depot_id="HUB_HYD",
+                current_depot_id="HUB_HYD",
+                current_location=Location(17.4960, 78.3980),
+                max_weight_kg=200.0,
+                max_volume_m3=2.0,
+                cost_per_km=0.75,
+                fuel_cost_per_km=0.12,
+                hos=DriverHOS(),
+                status=VehicleStatus.ACTIVE,
+                color_hex="#2563eb",
+                transport_mode="ROAD",
+                origin_name="Rainbow Vistas Apt",
+                destination_name="My Home Bhooja",
+                driver_name="DRV-113 (On Duty)",
+                route_status="NORMAL",
+                speed_kmh=25.0,
+                eta_str="8 min",
+                assigned_order_id="ORD-2061"
+            )
+        }
+
+        # Keep legacy aliases
+        self.vehicles["V1"] = self.vehicles["V-17"]
+        self.vehicles["V2"] = self.vehicles["V-204"]
+        self.vehicles["V3"] = self.vehicles["V-104"]
+        self.vehicles["V4"] = self.vehicles["V-105"]
+
+        # 3. Multi-Scale Road Delivery Orders (House, Colony, Locality, City, Inter-City, Inter-State)
+        self.orders = {
+            "ORD-2048": Order("ORD-2048", "Lakshmi Residency, Colony B", Location(17.4483, 78.3808), 85.0, 0.8, 10.0, 60.0, 10.0, False, "V-17", 2.0, "Colony A (KPHB), Hyderabad", "Colony B (Madhapur), Hyderabad", "HIGH", 42.0, "ROAD"),
+            "ORD-2049": Order("ORD-2049", "Gachibowli Tech Campus", Location(17.4401, 78.3489), 120.0, 1.2, 15.0, 90.0, 12.0, False, "V-204", 2.0, "Kukatpally, Hyderabad", "Gachibowli, Hyderabad", "HIGH", 58.0, "ROAD"),
+            "ORD-2050": Order("ORD-2050", "Banjara Commercial Center", Location(17.4156, 78.4350), 65.0, 0.6, 12.0, 75.0, 10.0, False, "V-102", 2.0, "Jubilee Hills", "Banjara Hills", "NORMAL", 65.0, "ROAD"),
+            "ORD-2051": Order("ORD-2051", "Secunderabad Terminal Stores", Location(17.4399, 78.4983), 210.0, 2.0, 20.0, 120.0, 15.0, False, "V-103", 2.0, "Hyderabad (Charminar)", "Secunderabad", "NORMAL", 52.0, "ROAD"),
+            "ORD-2052": Order("ORD-2052", "Warangal Agro Equipment Hub", Location(17.9689, 79.5941), 620.0, 5.5, 30.0, 180.0, 20.0, False, "V-104", 2.0, "Hyderabad", "Warangal", "NORMAL", 48.0, "ROAD"),
+            "ORD-2053": Order("ORD-2053", "Bhiwandi Warehousing Hub, Mumbai", Location(19.0760, 72.8777), 3800.0, 28.0, 60.0, 600.0, 30.0, False, "V-105", 2.5, "Hyderabad (Telangana)", "Mumbai (Maharashtra)", "HIGH", 64.0, "ROAD"),
+            "ORD-2054": Order("ORD-2054", "Okhla Industrial Estate, Delhi", Location(28.6139, 77.2090), 5400.0, 42.0, 120.0, 1200.0, 45.0, False, "V-106", 2.5, "Mumbai (Maharashtra)", "Delhi (NCR)", "NORMAL", 70.0, "ROAD"),
+            "ORD-2055": Order("ORD-2055", "Electronics City, Bengaluru", Location(12.9716, 77.5946), 2900.0, 22.0, 45.0, 480.0, 25.0, False, "V-107", 2.0, "Hyderabad", "Bengaluru", "NORMAL", 55.0, "ROAD"),
+            "ORD-2056": Order("ORD-2056", "Jaipur Handicrafts Distribution", Location(26.9124, 75.7873), 1800.0, 15.0, 40.0, 300.0, 20.0, False, "V-108", 2.0, "Delhi", "Jaipur", "NORMAL", 75.0, "ROAD"),
+            "ORD-2057": Order("ORD-2057", "Paris Bercy Logistics Depot", Location(48.8566, 2.3522), 4200.0, 32.0, 60.0, 420.0, 30.0, False, "V-109", 2.2, "Frankfurt (Germany)", "Paris (France)", "URGENT", 62.0, "ROAD"),
+            "ORD-2058": Order("ORD-2058", "Chicago Midwest Distribution", Location(41.8781, -87.6298), 6800.0, 52.0, 90.0, 800.0, 40.0, False, "V-110", 2.8, "New York (NY)", "Chicago (IL)", "NORMAL", 58.0, "ROAD"),
+            "ORD-2059": Order("ORD-2059", "SF Bay Retail Terminal", Location(37.7749, -122.4194), 3500.0, 26.0, 45.0, 380.0, 25.0, False, "V-111", 2.0, "Los Angeles (CA)", "San Francisco (CA)", "NORMAL", 60.0, "ROAD"),
+            "ORD-2060": Order("ORD-2060", "Melbourne Freight Superhub", Location(-37.8136, 144.9631), 4100.0, 30.0, 60.0, 540.0, 30.0, False, "V-112", 2.2, "Sydney (NSW)", "Melbourne (VIC)", "NORMAL", 72.0, "ROAD"),
+            "ORD-2061": Order("ORD-2061", "My Home Bhooja Doorstep", Location(17.4380, 78.3790), 28.0, 0.25, 5.0, 45.0, 5.0, False, "V-113", 2.0, "Rainbow Vistas Apt", "My Home Bhooja Doorstep", "URGENT", 80.0, "ROAD"),
+        }
+"""
+
+start_idx = content.find(old_block_start)
+end_idx = content.find(old_block_end)
+
+if start_idx != -1 and end_idx != -1:
+    content = content[:start_idx] + new_vehicles_and_orders + "\n" + content[end_idx:]
+    print("Replaced vehicles and orders section successfully!")
+else:
+    print("Error: Could not locate boundary markers in optimizer_core.py", start_idx, end_idx)
+
+# Also update global_stats in get_full_state
+old_stats = '''            "global_stats": {
+                "active_deliveries": 248,
+                "vehicles_in_transit": 173,
+                "air_shipments": 42,
+                "sea_shipments": 21,
+                "pending_orders": 31,
+                "delayed_shipments": 8,
+                "at_risk": 4,
+                "fleet_utilization_pct": 82.4,
+                "on_time_delivery_pct": 96.8,
+                "active_routes_count": 137
+            }'''
+
+new_stats = '''            "global_stats": {
+                "active_deliveries": 248,
+                "vehicles_in_transit": 173,
+                "hyperlocal_deliveries": 64,
+                "intracity_deliveries": 98,
+                "intercity_deliveries": 52,
+                "interstate_deliveries": 34,
+                "pending_orders": 31,
+                "delayed_shipments": 8,
+                "at_risk": 4,
+                "fleet_utilization_pct": 82.4,
+                "on_time_delivery_pct": 96.8,
+                "active_routes_count": 137
+            }'''
+
+content = content.replace(old_stats, new_stats)
+
+with open(r'c:\Users\Moksha Yagna Sree\.antigravity-ide\optimizer_core.py', 'w', encoding='utf-8') as f:
+    f.write(content)
+
+print("Saved updated optimizer_core.py!")
